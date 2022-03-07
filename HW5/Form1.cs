@@ -2,6 +2,7 @@ namespace HW5
 {
     public partial class Form1 : Form
     {
+
         public Form1()
         {
             InitializeComponent();
@@ -28,8 +29,9 @@ namespace HW5
             {
                 for (int x = 0; x < gray.Width; x++)
                 {
-                    int c = og.GetPixel(x, y).R;
-                    gray.SetPixel(x, y, Color.FromArgb(c, c, c));
+                    Color c = og.GetPixel(x, y);
+                    int Y = (int)(c.R * 0.3 + c.G * 0.59 + c.B * 0.11);
+                    gray.SetPixel(x, y, Color.FromArgb(Y, Y, Y));
                 }
             }
             return gray;
@@ -50,31 +52,38 @@ namespace HW5
             wn.Show();
         }
 
-        private int[,] equilization(int[,] img, int w, int h)
+        float[] cdf;
+        int[] f;
+        int m;
+
+        private int[,] equilization(int[,] img, int w, int h, bool newCDF)
         {
-            int m = 0;
-            float[] cdf = new float[256];
-            int[] f = new int[256];
-            for (int i = 0; i < 256; i++)
+            if (newCDF)
             {
-                cdf[i] = 0f;
-                f[i] = 0;
-            }
-
-            for (int x = 0; x < w; x++)
-            {
-                for (int y = 0; y < h; y++)
+                m = 0;
+                cdf = new float[256];
+                f = new int[256];
+                for (int i = 0; i < 256; i++)
                 {
-                    f[img[x, y]]++;
-                    m = Math.Max(m, img[x, y]);
+                    cdf[i] = 0f;
+                    f[i] = 0;
                 }
-            }
 
-            cdf[0] = f[0];
-            for (int j = 1; j < 256; j++)
-                cdf[j] = cdf[j - 1] + f[j];
-            for (int j = 0; j < 256; j++)
-                cdf[j] = cdf[j] / cdf[255];
+                for (int x = 0; x < w; x++)
+                {
+                    for (int y = 0; y < h; y++)
+                    {
+                        f[img[x, y]]++;
+                        m = Math.Max(m, img[x, y]);
+                    }
+                }
+
+                cdf[0] = f[0];
+                for (int j = 1; j < 256; j++)
+                    cdf[j] = cdf[j - 1] + f[j];
+                for (int j = 0; j < 256; j++)
+                    cdf[j] = cdf[j] / cdf[255];
+            }
 
             int[,] result = new int[w, h];
             for (int x = 0; x < w; x++)
@@ -90,69 +99,88 @@ namespace HW5
 
         private void histogram_Click(object sender, EventArgs e)
         {
+            Bitmap img = (Bitmap)image.Image;
+
             // perform for the grayscale histogram equilization
-            Bitmap gray = get_grayscale((Bitmap)image.Image);
-            int[,] values = new int[gray.Width, gray.Height];
-            for (int x = 0; x < gray.Width; x++)
+            int[,] values = new int[img.Width, img.Height];
+            for (int x = 0; x < img.Width; x++)
             {
-                for (int y = 0; y < gray.Height; y++)
+                for (int y = 0; y < img.Height; y++)
                 {
-                    values[x, y] = gray.GetPixel(x, y).R;
+                    values[x, y] = img.GetPixel(x, y).R;
                 }
             }
 
-            int[,] nValues = equilization(values, gray.Width, gray.Height);
+            int[,] nValues = equilization(values, img.Width, img.Height, true);
 
-            for (int x = 0; x < gray.Width; x++)
+            if (grayscale_check.Checked)
             {
-                for (int y = 0; y < gray.Height; y++)
+                Bitmap gray = get_grayscale((Bitmap)image.Image);
+                for (int x = 0; x < gray.Width; x++)
                 {
-                    gray.SetPixel(x, y, Color.FromArgb(nValues[x, y], nValues[x, y], nValues[x, y]));
+                    for (int y = 0; y < gray.Height; y++)
+                    {
+                        gray.SetPixel(x, y, Color.FromArgb(nValues[x, y], nValues[x, y], nValues[x, y]));
+                    }
                 }
-            }
 
-            Form wn = new Form2();
-            wn.Text = "Histogram Equilization of Grayscale Image";
-            PictureBox pict = new PictureBox();
-            pict.Image = gray;
-            pict.Size = gray.Size;
-            wn.Controls.Add(pict);
-            wn.Show();
+                Form wn = new Form2();
+                wn.Text = "Histogram Equilization of Grayscale Image";
+                PictureBox pict = new PictureBox();
+                pict.Image = gray;
+                pict.Size = gray.Size;
+                wn.Controls.Add(pict);
+                wn.Show();
+            }
 
             // perform for the RGB histogram equilization
-            Bitmap rgb = (Bitmap)image.Image;
-            int[,] Rvalues = new int[rgb.Width, rgb.Height];
-            int[,] Gvalues = new int[rgb.Width, rgb.Height];
-            int[,] Bvalues = new int[rgb.Width, rgb.Height];
-            for (int x = 0; x < rgb.Width; x++)
+            if (original_check.Checked)
             {
-                for (int y = 0; y < rgb.Height; y++)
+                Bitmap rgb = new Bitmap(image.Image.Width, image.Image.Height);
+                Bitmap picture = (Bitmap)image.Image;
+                int[,] Rvalues = new int[rgb.Width, rgb.Height];
+                int[,] Gvalues = new int[rgb.Width, rgb.Height];
+                int[,] Bvalues = new int[rgb.Width, rgb.Height];
+                for (int x = 0; x < rgb.Width; x++)
                 {
-                    Rvalues[x, y] = rgb.GetPixel(x, y).R;
-                    Gvalues[x, y] = rgb.GetPixel(x, y).G;
-                    Bvalues[x, y] = rgb.GetPixel(x, y).B;
+                    for (int y = 0; y < rgb.Height; y++)
+                    {
+                        Color c = picture.GetPixel(x, y);
+                        Rvalues[x, y] = c.R;
+                        Gvalues[x, y] = c.G;
+                        Bvalues[x, y] = c.B;
+                    }
                 }
-            }
 
-            int[,] nRvalues = equilization(Rvalues, rgb.Width, rgb.Height);
-            int[,] nGvalues = equilization(Gvalues, rgb.Width, rgb.Height);
-            int[,] nBvalues = equilization(Bvalues, rgb.Width, rgb.Height);
+                int[,] nRvalues = equilization(Rvalues, rgb.Width, rgb.Height, false);
+                int[,] nGvalues = equilization(Gvalues, rgb.Width, rgb.Height, false);
+                int[,] nBvalues = equilization(Bvalues, rgb.Width, rgb.Height, false);
 
-            for (int x = 0; x < rgb.Width; x++)
-            {
-                for (int y = 0; y < rgb.Height; y++)
+                for (int x = 0; x < rgb.Width; x++)
                 {
-                    rgb.SetPixel(x, y, Color.FromArgb(nRvalues[x, y], nGvalues[x, y], nBvalues[x, y]));
+                    for (int y = 0; y < rgb.Height; y++)
+                    {
+                        rgb.SetPixel(x, y, Color.FromArgb(nRvalues[x, y], nGvalues[x, y], nBvalues[x, y]));
+                    }
                 }
-            }
 
-            Form wn2 = new Form2();
-            wn2.Text = "Histogram Equilization of Image";
-            PictureBox pict2 = new PictureBox();
-            pict2.Image = rgb;
-            pict2.Size = rgb.Size;
-            wn2.Controls.Add(pict2);
-            wn2.Show();
+                Form wn2 = new Form2();
+                wn2.Text = "Histogram Equilization of Image";
+                PictureBox pict2 = new PictureBox();
+                pict2.Image = rgb;
+                pict2.Size = rgb.Size;
+                wn2.Controls.Add(pict2);
+                wn2.Show(); 
+            }
+        }
+
+        private void close_results_Click(object sender, EventArgs e)
+        {
+            Application.OpenForms
+                .OfType<Form2>()
+                .Where(form => form.Name == "Form2")
+                .ToList()
+                .ForEach(form => form.Close());
         }
     }
 }

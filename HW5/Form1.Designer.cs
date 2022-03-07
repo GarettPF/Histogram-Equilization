@@ -34,6 +34,7 @@
             this.original_check = new System.Windows.Forms.CheckBox();
             this.histogram = new System.Windows.Forms.Button();
             this.image = new System.Windows.Forms.PictureBox();
+            this.close_results = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.image)).BeginInit();
             this.SuspendLayout();
             // 
@@ -95,11 +96,22 @@
             this.image.TabIndex = 6;
             this.image.TabStop = false;
             // 
+            // close_results
+            // 
+            this.close_results.Location = new System.Drawing.Point(12, 164);
+            this.close_results.Name = "close_results";
+            this.close_results.Size = new System.Drawing.Size(119, 25);
+            this.close_results.TabIndex = 7;
+            this.close_results.Text = "Close All Results";
+            this.close_results.UseVisualStyleBackColor = true;
+            this.close_results.Click += new System.EventHandler(this.close_results_Click);
+            // 
             // Form1
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(142, 169);
+            this.ClientSize = new System.Drawing.Size(142, 201);
+            this.Controls.Add(this.close_results);
             this.Controls.Add(this.image);
             this.Controls.Add(this.histogram);
             this.Controls.Add(this.original_check);
@@ -123,5 +135,6 @@
         private CheckBox original_check;
         private Button histogram;
         private PictureBox image;
+        private Button close_results;
     }
 }
